@@ -16,7 +16,7 @@ bot.login(TOKEN);
 bot.on('ready', () => {
     let ip = ''
     console.info(`Logged in as ${bot.user.tag}!`);
-    server.ping(60000, 1073741831, (err, res) => {
+    server.ping(10000, 1073741831, (err, res) => {
         getIP((ipErr, currentIP) => {
             if (ipErr) {
                 // every service in the list has failed
@@ -33,7 +33,7 @@ bot.on('ready', () => {
             }
             if (typeof res.players.sample === 'undefined') { bot.user.setStatus('idle') }
             if (!(typeof res.players.sample === 'undefined')) { bot.user.setStatus('online') }
-            let serverStatus = ip + ' - ' + res.players.online + ' / ' + res.players.max;
+            let serverStatus = res.players.online + ' / ' + res.players.max + ' - ' + ip;
             const date = (new Date()).toLocaleTimeString();
             bot.user.setAvatar(res.favicon);
             bot.user.setActivity(serverStatus, { type: 'PLAYING' }).then(presence => console.log(
