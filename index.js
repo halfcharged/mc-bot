@@ -80,7 +80,9 @@ bot.on('ready', () => {
         mcping();
         bot.on('message', msg => {
             if (msg.content === '-mc ip') {
-                msg.channel.send(ip);
+                ipPing((err, currentIP) => {
+                    msg.channel.send(ip);
+                })
             }
         });
     });
