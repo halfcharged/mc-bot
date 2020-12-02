@@ -35,6 +35,7 @@ bot.on('ready', () => {
             if (!(typeof res.players.sample === 'undefined')) { bot.user.setStatus('online') }
             let serverStatus = ip + ' - ' + res.players.online + ' / ' + res.players.max;
             const date = (new Date()).toLocaleTimeString();
+            bot.user.setAvatar(res.favicon);
             bot.user.setActivity(serverStatus, { type: 'WATCHING' }).then(presence => console.log(
                 chalk.cyan('\[' + cleanDate + '\]:') + chalk.white(' Ping: ' + serverStatus)
             )).catch(console.error);
