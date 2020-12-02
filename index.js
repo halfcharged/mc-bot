@@ -37,7 +37,7 @@ bot.on('ready', () => {
             const date = (new Date()).toLocaleTimeString();
             bot.user.setAvatar(res.favicon);
             bot.user.setActivity(serverStatus, { type: 'PLAYING' }).then(presence => console.log(
-                chalk.cyan('\[' + cleanDate + '\]:') + chalk.white(' Ping: ' + serverStatus)
+                chalk.cyan('\[' + date + '\]:') + chalk.white(' Ping: ' + serverStatus)
             )).catch(console.error);
         });
     })
