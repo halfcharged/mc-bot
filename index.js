@@ -30,7 +30,7 @@ bot.on('ready', () => {
                     bot.user.setStatus('dnd');
                     bot.user.setActivity('Offline - ' + ip, { type: 'PLAYING' }).catch(console.error);
                     console.log((chalk.yellow('\[' + date + '\]:') + chalk.white(' Ping: ' + 'Server Offline')));
-                    setTimeout(ping, 10000);
+                    setTimeout(ping, 30000);
                     return
                 }
                 if (res.players && (typeof res.players.online !== 'undefined') && (typeof res.players.max !== 'undefined')) {
@@ -47,7 +47,7 @@ bot.on('ready', () => {
                     )).catch(console.error);
                 }
                 bot.user.setAvatar(res.favicon);
-                setTimeout(ping, 10000);
+                setTimeout(ping, 30000);
             });
         })
     };
