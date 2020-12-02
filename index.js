@@ -28,7 +28,7 @@ bot.on('ready', () => {
                 bot.user.setStatus('dnd')
                     .then(console.log)
                     .catch(console.error);
-                bot.user.setActivity('Server Offline - ' + ip, { type: 'WATCHING' });
+                bot.user.setActivity('Offline - ' + ip, { type: 'PLAYING' });
                 return
             }
             if (typeof res.players.sample === 'undefined') { bot.user.setStatus('idle') }
@@ -36,7 +36,7 @@ bot.on('ready', () => {
             let serverStatus = ip + ' - ' + res.players.online + ' / ' + res.players.max;
             const date = (new Date()).toLocaleTimeString();
             bot.user.setAvatar(res.favicon);
-            bot.user.setActivity(serverStatus, { type: 'WATCHING' }).then(presence => console.log(
+            bot.user.setActivity(serverStatus, { type: 'PLAYING' }).then(presence => console.log(
                 chalk.cyan('\[' + cleanDate + '\]:') + chalk.white(' Ping: ' + serverStatus)
             )).catch(console.error);
         });
