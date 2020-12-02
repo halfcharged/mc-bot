@@ -14,54 +14,74 @@ const TOKEN = process.env.TOKEN;
 bot.login(TOKEN);
 
 bot.on('ready', () => {
-    let ip = 'Failed To Fetch IP'
     console.info(`Logged in as ${bot.user.tag}!`);
-    const ping = () => {
-        server.ping(10000, 1073741831, (err, res) => {
-            getIP((ipErr, currentIP) => {
-                if (ipErr) {
-                    // every service in the list has failed
-                    console.error(ipErr);
-                } else {
-                    ip = currentIP;
-                }
-                const date = (new Date()).toLocaleTimeString();
-                if (!(typeof err === 'undefined' || err === null)) {
-                    bot.user.setStatus('dnd');
-                    bot.user.setActivity('Offline - ' + ip, { type: 'PLAYING' }).catch(console.error);
-                    console.log((chalk.yellow('\[' + date + '\]:') + chalk.white(' Ping: ' + 'Server Offline')));
-                    setTimeout(ping, 30000);
-                    return
-                }
-                if (res.players && (typeof res.players.online !== 'undefined') && (typeof res.players.max !== 'undefined')) {
-                    let serverStatus = res.players.online + ' / ' + res.players.max + ' - ' + ip;
-                    res.players.online == 0 ? bot.user.setStatus('idle') : bot.user.setStatus('online');
-                    bot.user.setActivity(serverStatus, { type: 'PLAYING' }).then(presence => console.log(
-                        chalk.cyan('\[' + date + '\]:') + chalk.white(' Ping: ' + serverStatus)
-                    )).catch(console.error);
-                } else {
-                    let serverStatus = ip + ' 🚀';
-                    bot.user.setStatus('idle');
-                    bot.user.setActivity(serverStatus, { type: 'WATCHING' }).then(presence => console.log(
-                        chalk.cyan('\[' + date + '\]:') + chalk.white(' Ping: ' + serverStatus)
-                    )).catch(console.error);
-                }
-                bot.user.setAvatar(res.favicon);
-                setTimeout(ping, 30000);
-            });
-        })
-    };
-    ping();
-});
-
-bot.on('message', msg => {
-    if (msg.content === '-mc ip') {
-        getIP((err, ip) => {
-            if (err) {
+    const initialIP = 'Failed To Fetch IP';
+    let ip = initialIP;
+    let serverStatus = ''
+    let statusType = '';
+    let userStatus = '';
+    let favicon = null;
+    const ipPing = (callback) => {
+        getIP((ipErr, currentIP) => {
+            let timeout = 3600000;
+            if (ipErr) {
                 // every service in the list has failed
-                throw err;
+                console.error(ipErr);
+                if (ip == initialIP) {
+                    timeout = 60000;
+                }
+            } else {
+                ip = currentIP;
             }
-            msg.channel.send(ip);
+            if (callback) {
+                callback(ipErr, currentIP);
+            }
+            setTimeout(ipPing, timeout);
         });
-    }
+    };
+    const mcping = () => {
+        server.ping(10000, 1073741831, (err, res) => {
+            const lastServerStatus = serverStatus;
+            const lastStatusType = statusType;
+            const lastUserStatus = userStatus;
+            if (!(typeof err === 'undefined' || err === null)) {
+                // Server is offline.
+                serverStatus = '🚫' + ip;
+                statusType = 'WATCHING';
+                userStatus = 'invisible';
+            } else if (res.players && (typeof res.players.online !== 'undefined') && (typeof res.players.max !== 'undefined')) {
+                // Server is running.
+                serverStatus = res.players.online + ' / ' + res.players.max + ' - ' + ip;
+                statusType = 'PLAYING';
+                userStatus = res.players.online == 0 ? 'idle' : 'online';
+            } else {
+                // Server is still launching.
+                serverStatus = '🚀' + ip;
+                statusType = 'WATCHING';
+                userStatus = 'idle';
+            }
+            const lastFavicon = favicon;
+            if (res) {
+                favicon = res.favicon;
+            }
+            if (lastServerStatus != serverStatus || lastStatusType != statusType || lastUserStatus != userStatus) {
+                const date = (new Date()).toLocaleTimeString();
+                bot.user.setPresence({ "activity": { "name": serverStatus, "type": statusType }, "status": userStatus }).then(presence => console.log(
+                    chalk.cyan('\[' + date + '\]:') + chalk.white(' Status: ' + serverStatus)
+                )).catch(console.error);
+            }
+            if (favicon && favicon != lastFavicon) {
+                bot.user.setAvatar(favicon);
+            }
+            setTimeout(mcping, 10000);
+        });
+    };
+    ipPing((err, ip) => {
+        mcping();
+        bot.on('message', msg => {
+            if (msg.content === '-mc ip') {
+                msg.channel.send(ip);
+            }
+        });
+    });
 });
