@@ -14,33 +14,44 @@ const TOKEN = process.env.TOKEN;
 bot.login(TOKEN);
 
 bot.on('ready', () => {
-    let ip = ''
+    let ip = 'Failed To Fetch IP'
     console.info(`Logged in as ${bot.user.tag}!`);
-    server.ping(10000, 1073741831, (err, res) => {
-        getIP((ipErr, currentIP) => {
-            if (ipErr) {
-                // every service in the list has failed
-                throw err;
-            } else {
-                ip = currentIP;
-            }
-            if (!(typeof err === 'undefined' || err === null)) {
-                bot.user.setStatus('dnd')
-                    .then(console.log)
-                    .catch(console.error);
-                bot.user.setActivity('Offline - ' + ip, { type: 'PLAYING' });
-                return
-            }
-            if (typeof res.players.sample === 'undefined') { bot.user.setStatus('idle') }
-            if (!(typeof res.players.sample === 'undefined')) { bot.user.setStatus('online') }
-            let serverStatus = res.players.online + ' / ' + res.players.max + ' - ' + ip;
-            const date = (new Date()).toLocaleTimeString();
-            bot.user.setAvatar(res.favicon);
-            bot.user.setActivity(serverStatus, { type: 'PLAYING' }).then(presence => console.log(
-                chalk.cyan('\[' + date + '\]:') + chalk.white(' Ping: ' + serverStatus)
-            )).catch(console.error);
-        });
-    })
+    const ping = () => {
+        server.ping(10000, 1073741831, (err, res) => {
+            getIP((ipErr, currentIP) => {
+                if (ipErr) {
+                    // every service in the list has failed
+                    console.error(ipErr);
+                } else {
+                    ip = currentIP;
+                }
+                const date = (new Date()).toLocaleTimeString();
+                if (!(typeof err === 'undefined' || err === null)) {
+                    bot.user.setStatus('dnd');
+                    bot.user.setActivity('Offline - ' + ip, { type: 'PLAYING' }).catch(console.error);
+                    console.log((chalk.yellow('\[' + date + '\]:') + chalk.white(' Ping: ' + 'Server Offline')));
+                    setTimeout(ping, 10000);
+                    return
+                }
+                if (res.players && (typeof res.players.online !== 'undefined') && (typeof res.players.max !== 'undefined')) {
+                    let serverStatus = res.players.online + ' / ' + res.players.max + ' - ' + ip;
+                    res.players.online == 0 ? bot.user.setStatus('idle') : bot.user.setStatus('online');
+                    bot.user.setActivity(serverStatus, { type: 'PLAYING' }).then(presence => console.log(
+                        chalk.cyan('\[' + date + '\]:') + chalk.white(' Ping: ' + serverStatus)
+                    )).catch(console.error);
+                } else {
+                    let serverStatus = ip + ' 🚀';
+                    bot.user.setStatus('idle');
+                    bot.user.setActivity(serverStatus, { type: 'WATCHING' }).then(presence => console.log(
+                        chalk.cyan('\[' + date + '\]:') + chalk.white(' Ping: ' + serverStatus)
+                    )).catch(console.error);
+                }
+                bot.user.setAvatar(res.favicon);
+                setTimeout(ping, 10000);
+            });
+        })
+    };
+    ping();
 });
 
 bot.on('message', msg => {
