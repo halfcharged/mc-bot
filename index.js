@@ -66,7 +66,8 @@ bot.on('ready', () => {
             }
             if (lastServerStatus != serverStatus || lastStatusType != statusType || lastUserStatus != userStatus) {
                 const date = (new Date()).toLocaleTimeString();
-                bot.user.setPresence({ "activity": { "name": serverStatus, "type": statusType }, "status": userStatus }).then(presence => console.log(
+                bot.user.setStatus(userStatus).catch(console.error);
+                bot.user.setActivity(serverStatus, { type: statusType }).then(presence => console.log(
                     chalk.cyan('\[' + date + '\]:') + chalk.white(' Status: ' + serverStatus)
                 )).catch(console.error);
             }
