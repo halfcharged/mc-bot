@@ -21,17 +21,24 @@ bot.on('ready', () => {
     let statusType = '';
     let userStatus = '';
     let favicon = null;
-    const ipPing = (callback) => {
+    const fetchIP = (callback) => {
         getIP((ipErr, currentIP) => {
+            if (!ipErr && currentIP) {
+                ip = currentIP;
+            }
+            if (callback) {
+                callback(ipErr, currentIP);
+            }
+        });
+    };
+    const ipPing = (callback) => {
+        fetchIP((ipErr, currentIP) => {
             let timeout = 3600000;
             if (ipErr) {
-                // every service in the list has failed
                 console.error(ipErr);
                 if (ip == initialIP) {
                     timeout = 60000;
                 }
-            } else {
-                ip = currentIP;
             }
             if (callback) {
                 callback(ipErr, currentIP);
@@ -81,9 +88,9 @@ bot.on('ready', () => {
         mcping();
         bot.on('message', msg => {
             if (msg.content === '-mc ip') {
-                ipPing((err, currentIP) => {
-                    msg.channel.send(ip);
-                })
+                fetchIP((err, currentIP) => {
+                    msg.channel.send(err ? ip : currentIP);
+                });
             }
         });
     });
