@@ -55,7 +55,7 @@ bot.on('ready', () => {
                 // Server is offline.
                 serverStatus = '🚫' + ip;
                 statusType = 'WATCHING';
-                userStatus = 'invisible';
+                userStatus = 'dnd';
             } else if (res.players && (typeof res.players.online !== 'undefined') && (typeof res.players.max !== 'undefined')) {
                 // Server is running.
                 serverStatus = res.players.online + ' / ' + res.players.max + ' - ' + ip;
