@@ -21,6 +21,7 @@ bot.on('ready', () => {
     let statusType = '';
     let userStatus = '';
     let favicon = null;
+    let players = [];
     const fetchIP = (callback) => {
         getIP((ipErr, currentIP) => {
             if (!ipErr && currentIP) {
@@ -56,16 +57,23 @@ bot.on('ready', () => {
                 serverStatus = '🚫' + ip;
                 statusType = 'WATCHING';
                 userStatus = 'dnd';
+                players = [];
             } else if (res.players && (typeof res.players.online !== 'undefined') && (typeof res.players.max !== 'undefined')) {
                 // Server is running.
                 serverStatus = res.players.online + ' / ' + res.players.max + ' - ' + ip;
                 statusType = 'PLAYING';
                 userStatus = res.players.online == 0 ? 'idle' : 'online';
+                if (res.players.sample && (typeof res.players.sample !== 'undefined')) {
+                    players = res.players.sample.map(player => player.name).sort();
+                } else {
+                    players = [];
+                }
             } else {
                 // Server is still launching.
                 serverStatus = '🚀' + ip;
                 statusType = 'WATCHING';
                 userStatus = 'idle';
+                players = [];
             }
             const lastFavicon = favicon;
             if (res) {
@@ -87,10 +95,23 @@ bot.on('ready', () => {
     ipPing((err, ip) => {
         mcping();
         bot.on('message', msg => {
-            if (msg.content === '-mc ip') {
-                fetchIP((err, currentIP) => {
-                    msg.channel.send(err ? ip : currentIP);
-                });
+            switch (msg.content) {
+                case '-mc ip':
+                    fetchIP((err, currentIP) => {
+                        msg.channel.send(err ? ip : currentIP);
+                    });
+                    return;
+                case '-mc list':
+                    if (players.length <= 0) {
+                        msg.channel.send('There are currently no players in the minecraft server.');
+                        return;
+                    }
+                    if (players.length == 1) {
+                        msg.channel.send(`There is currently 1 player in the minecraft server: *${players[0]}*`);
+                        return;
+                    }
+                    msg.channel.send(`There are currently ${players.length} players in the minecraft server:\n    ${players.map(p => `*${p}*`).join('\n    ')}`);
+                    return;
             }
         });
     });
