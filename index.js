@@ -44,6 +44,9 @@ function executeCommand(command, channel) {
     if (output.length < 1) {
         return;
     }
+    const lines = output.split(/\r|\n/g);
+    output = lines.slice(4, -1).join('\n');
+    output = output.replace(/\x1b\[[0-9;]*m/g, '');
     output = output.trimStart().substr(0, 2000).trimEnd();
     if (output.length < 1) {
         return;
