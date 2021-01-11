@@ -10,7 +10,7 @@ require('dotenv').config();
 const Discord = require('discord.js');
 const bot = new Discord.Client();
 const TOKEN = process.env.TOKEN;
-const ADMINS=process.env.ADMINS.split(" ");
+const ADMINS=(process.env.ADMINS && (typeof process.env.ADMINS !== 'undefined')) ? process.env.ADMINS.split(" ") : [];
 
 bot.login(TOKEN);
 
@@ -97,6 +97,7 @@ bot.on('ready', () => {
         mcping();
         bot.on('message', msg => {
             const content = msg.content.trim();
+            // General commands.
             switch (content) {
                 case '-mc ip':
                     fetchIP((err, currentIP) => {
@@ -115,6 +116,7 @@ bot.on('ready', () => {
                     msg.channel.send(`There are currently ${players.length} players in the minecraft server:\n    ${players.map(p => `*${p}*`).join('\n    ')}`);
                     return;
             }
+            // Elevated commands.
             if (content.length < 5 || !content.startsWith('!mc')) {
                 return;
             }
@@ -129,6 +131,7 @@ bot.on('ready', () => {
                 msg.channel.send("Only mc-bot admins are able to execute commands on the minecraft server.");
                 return;
             }
+            // Execute the command on the minecraft server.
             const command = content.substr(4).trimStart();
             msg.channel.send(`Execute command: ${command}`);
         });
