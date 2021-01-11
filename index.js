@@ -1,6 +1,9 @@
 'use strict';
 
 const getIP = require('external-ip')();
+const child_process = require("child_process");
+const fs = require('fs');
+const sleep = require('sleep');
 
 const mcping = require('mcping-js');
 const server = new mcping.MinecraftServer('localhost', 25565);
@@ -11,6 +14,29 @@ const Discord = require('discord.js');
 const bot = new Discord.Client();
 const TOKEN = process.env.TOKEN;
 const ADMINS=(process.env.ADMINS && (typeof process.env.ADMINS !== 'undefined')) ? process.env.ADMINS.split(" ") : [];
+
+function executeCommand(command, channel) {
+    try {
+        child_process.execSync('screen -S minecraft_server -X log off');
+        child_process.execSync('rm -f /tmp/mc-command');
+        child_process.execSync("screen -S minecraft_server -X logfile /tmp/mc-command");
+        child_process.execSync('screen -S minecraft_server -X log on');
+        child_process.execSync(`screen -S minecraft_server -X ${command}`);
+        sleep.sleep(1);
+        child_process.execSync('screen -S minecraft_server -X log off');
+    } catch(err) {
+        channel.send(`Unable to execute command: ${err.message}`);
+    }
+    let output = "";
+    try {
+        output = fs.readFileSync('/tmp/mc-command', 'utf8');
+    } catch(err) {}
+    output = output.trim();
+    if (output.length < 1) {
+        return;
+    }
+    channel.send(output);
+}
 
 bot.login(TOKEN);
 
@@ -120,6 +146,10 @@ bot.on('ready', () => {
             if (content.length < 5 || !content.startsWith('!mc')) {
                 return;
             }
+            if (statusType != 'PLAYING') {
+                msg.channel.send("Unable to execute command since the minecraft server is not running.")
+                return;
+            }
             // Check to make sure that the author of the message has the correct permissions to execute commands on the minecraft server.
             if (!msg.author || (typeof msg.author == 'undefined') || !msg.author.username || (typeof msg.author.username === 'undefined')) {
                 msg.channel.send("Unable to execute command as I am unable to gauge who sent the message.")
@@ -133,7 +163,7 @@ bot.on('ready', () => {
             }
             // Execute the command on the minecraft server.
             const command = content.substr(4).trimStart();
-            msg.channel.send(`Execute command: ${command}`);
+            executeCommand(command, msg.channel);
         });
     });
 });
