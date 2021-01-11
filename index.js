@@ -22,18 +22,26 @@ function executeCommand(command, channel) {
         child_process.execSync(`screen -S ${SCREEN_NAME} -X log off`);
         fs.rmSync(`/tmp/mc-${SCREEN_NAME}-command`, { force: true });
         child_process.execSync(`screen -S ${SCREEN_NAME} -X logfile /tmp/mc-${SCREEN_NAME}-command`);
+        child_process.execSync(`screen -S ${SCREEN_NAME} -X logfile flush 0`);
         child_process.execSync(`screen -S ${SCREEN_NAME} -X log`);
         child_process.execSync(`screen -S ${SCREEN_NAME} -X stuff "${command}\r"`);
-        sleep.sleep(1);
-        child_process.execSync(`screen -S ${SCREEN_NAME} -X log off`);
+        sleep.sleep(3);
         const date = (new Date()).toLocaleTimeString();
         console.log(chalk.cyan('\[' + date + '\]:') + chalk.white(' Executed Command: "' + command + '"'));
     } catch(err) {
         channel.send(`Unable to execute command: ${err.message}`);
+        return;
     }
+    sleep.sleep(3);
     let output = "";
     try {
         output = fs.readFileSync(`/tmp/mc-${SCREEN_NAME}-command`, 'utf8');
+    } catch(err) {
+        console.log(err);
+    }
+    try {
+        child_process.execSync(`screen -S ${SCREEN_NAME} -X log off`);
+        sleep.sleep(1);
     } catch(err) {}
     if (output.length < 1) {
         return;
