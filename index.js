@@ -96,7 +96,7 @@ bot.on('ready', () => {
     ipPing((err, ip) => {
         mcping();
         bot.on('message', msg => {
-            const content = msg.content;
+            const content = msg.content.trim();
             switch (content) {
                 case '-mc ip':
                     fetchIP((err, currentIP) => {
