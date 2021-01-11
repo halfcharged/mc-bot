@@ -13,23 +13,25 @@ require('dotenv').config();
 const Discord = require('discord.js');
 const bot = new Discord.Client();
 const TOKEN = process.env.TOKEN;
-const ADMINS=(process.env.ADMINS && (typeof process.env.ADMINS !== 'undefined')) ? process.env.ADMINS.split(" ") : [];
+const ADMINS = (process.env.ADMINS && (typeof process.env.ADMINS !== 'undefined')) ? process.env.ADMINS.split(" ") : [];
+const SCREEN_NAME = (process.env.SCREEN_NAME && (typeof process.env.SCREEN_NAME !== 'undefined')) ? process.env.SCREEN_NAME : "minecraft_server";
 
 function executeCommand(command, channel) {
     try {
-        child_process.execSync('screen -S minecraft_server -X log off');
-        child_process.execSync('rm -f /tmp/mc-command');
-        child_process.execSync("screen -S minecraft_server -X logfile /tmp/mc-command");
-        child_process.execSync('screen -S minecraft_server -X log on');
-        child_process.execSync(`screen -S minecraft_server -X ${command}`);
+        child_process.execSync(`screen -S ${SCREEN_NAME} -X log off`);
+        fs.rmSync(`/tmp/mc-${SCREEN_NAME}-command`, { force: true });
+        child_process.execSync(`screen -S ${SCREEN_NAME} -X logfile /tmp/mc-${SCREEN_NAME}-command`);
+        child_process.execSync(`screen -S ${SCREEN_NAME} -X log on`);
+        child_process.execSync(`screen -S ${SCREEN_NAME} -X ${command}`);
         sleep.sleep(1);
-        child_process.execSync('screen -S minecraft_server -X log off');
+        child_process.execSync(`screen -S ${SCREEN_NAME} -X log off`);
+        console.log(`Executed ${command}`);
     } catch(err) {
         channel.send(`Unable to execute command: ${err.message}`);
     }
     let output = "";
     try {
-        output = fs.readFileSync('/tmp/mc-command', 'utf8');
+        output = fs.readFileSync(`/tmp/mc-${SCREEN_NAME}-command`, 'utf8');
     } catch(err) {}
     output = output.trim();
     if (output.length < 1) {
