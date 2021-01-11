@@ -10,6 +10,7 @@ require('dotenv').config();
 const Discord = require('discord.js');
 const bot = new Discord.Client();
 const TOKEN = process.env.TOKEN;
+const ADMINS=process.env.ADMINS.split(" ");
 
 bot.login(TOKEN);
 
@@ -95,7 +96,8 @@ bot.on('ready', () => {
     ipPing((err, ip) => {
         mcping();
         bot.on('message', msg => {
-            switch (msg.content) {
+            const content = msg.content;
+            switch (content) {
                 case '-mc ip':
                     fetchIP((err, currentIP) => {
                         msg.channel.send(err ? ip : currentIP);
@@ -113,6 +115,22 @@ bot.on('ready', () => {
                     msg.channel.send(`There are currently ${players.length} players in the minecraft server:\n    ${players.map(p => `*${p}*`).join('\n    ')}`);
                     return;
             }
+            if (content.length < 5 || !content.startsWith('!mc')) {
+                return;
+            }
+            // Check to make sure that the author of the message has the correct permissions to execute commands on the minecraft server.
+            if (!msg.author || (typeof msg.author == 'undefined') || !msg.author.username || (typeof msg.author.username === 'undefined')) {
+                msg.channel.send("Unable to execute command as I am unable to gauge who sent the message.")
+                return;
+            }
+            const discriminator = (msg.author.discriminator && (typeof msg.author.discriminator !== 'undefined')) ? ('#' + msg.author.discriminator) : '';
+            const user = msg.author.username + discriminator;
+            if (!ADMINS.includes(user)) {
+                msg.channel.send("Only mc-bot admins are able to execute commands on the minecraft server.");
+                return;
+            }
+            const command = content.substr(4).trimStart();
+            msg.channel.send(`Execute command: ${command}`);
         });
     });
 });
