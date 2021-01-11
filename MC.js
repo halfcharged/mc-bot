@@ -95,7 +95,7 @@ module.exports = class MC {
                         msg.channel.send(`There are currently ${this.serverStatus.players.length} players in the minecraft server:\n    ${this.serverStatus.players.map(p => `*${p}*`).join('\n    ')}`);
                         return;
                 }
-                const admin = this.isAdmin(msg.author);
+                const admin = this.isAdmin(msg.author) && msg.channel.type == 'dm';
                 if (content == `-${this.MC} help`) {
                     msg.channel.send(this.usage(admin));
                     return;
@@ -103,7 +103,7 @@ module.exports = class MC {
                 // Admin commands.
                 if (!admin || content.length < this.MC.length + 3) {
                     msg.channel.send('Invalid command');
-                    msg.channel.send(usage(admin));
+                    msg.channel.send(this.usage(admin));
                     return;
                 }
                 switch (content) {
