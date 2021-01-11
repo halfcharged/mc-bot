@@ -29,7 +29,7 @@ module.exports = class MC {
         this.bot.login(this.TOKEN);
         this.server = new mcping.MinecraftServer('localhost', 25565);
         this.bot.on('ready', () => {
-            console.info(`Logged in as ${this.bot.user.tag}!`);
+            this.log(`Logged in as ${this.bot.user.tag}!`);
             const initialIP = 'Failed To Fetch IP';
             this.serverStatus = new ServerStatus(this.MC, initialIP, '', '', '', null, []);
             const fetchIP = (callback) => {
@@ -46,7 +46,7 @@ module.exports = class MC {
                 fetchIP((ipErr, currentIP) => {
                     let timeout = 3600000;
                     if (ipErr) {
-                        console.error(ipErr);
+                        this.logError(ipErr);
                         if (this.serverStatus.ip == initialIP) {
                             timeout = 60000;
                         }
@@ -60,9 +60,9 @@ module.exports = class MC {
             const mcping = () => {
                 this.server.ping(10000, 1073741831, (err, res) => {
                     if (this.serverStatus.ping(err, res)) {
-                        this.bot.user.setStatus(this.serverStatus.userStatus).catch(console.error);
+                        this.bot.user.setStatus(this.serverStatus.userStatus).catch(this.logError);
                         this.bot.user.setActivity(this.serverStatus.serverStatus, { type: this.serverStatus.statusType })
-                            .then(presence => this.log('Status: ' + this.serverStatus.serverStatus)).catch(console.error);
+                            .then(presence => this.log('Status: ' + this.serverStatus.serverStatus)).catch(this.logError);
                     }
                     const lastFavicon = this.serverStatus.favicon;
                     if (this.serverStatus.favicon && this.serverStatus.favicon != lastFavicon) {
@@ -137,7 +137,13 @@ module.exports = class MC {
 
     log(msg) {
         const date = (new Date()).toLocaleTimeString();
-        console.log(chalk.cyan('\[' + date + '\]:') + chalk.white(' ' + msg));
+        console.log(chalk.cyan('\[' + date + '\]') + chalk.white(' ' + msg));
+    }
+
+    logError(msg) {
+        const str = (msg instanceof Error) ? msg.message : msg;
+        const date = (new Date()).toLocaleTimeString();
+        console.error(chalk.red('\[' + date + '\] Error:') + chalk.white(' ' + str));
     }
 
     usage(admin) {
@@ -183,7 +189,7 @@ COMMANDS:
         try {
             output = fs.readFileSync(`/tmp/mc-${this.SCREEN_NAME}-command`, 'utf8');
         } catch(err) {
-            console.log(err);
+            this.logError(err.message);
         }
         try {
             child_process.execSync(`screen -S ${this.SCREEN_NAME} -X log off`);
