@@ -25,7 +25,6 @@ function executeCommand(command, channel) {
         child_process.execSync(`screen -S ${SCREEN_NAME} -X logfile flush 0`);
         child_process.execSync(`screen -S ${SCREEN_NAME} -X log`);
         child_process.execSync(`screen -S ${SCREEN_NAME} -X stuff "${command}\r"`);
-        sleep.sleep(3);
         const date = (new Date()).toLocaleTimeString();
         console.log(chalk.cyan('\[' + date + '\]:') + chalk.white(' Executed Command: "' + command + '"'));
     } catch(err) {
@@ -41,7 +40,6 @@ function executeCommand(command, channel) {
     }
     try {
         child_process.execSync(`screen -S ${SCREEN_NAME} -X log off`);
-        sleep.sleep(1);
     } catch(err) {}
     if (output.length < 1) {
         return;
