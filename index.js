@@ -153,10 +153,6 @@ bot.on('ready', () => {
             if (content.length < 5 || !content.startsWith(`!${MC}`)) {
                 return;
             }
-            if (statusType != 'PLAYING') {
-                msg.channel.send("Unable to execute command since the minecraft server is not running.")
-                return;
-            }
             // Check to make sure that the author of the message has the correct permissions to execute commands on the minecraft server.
             if (!msg.author || (typeof msg.author == 'undefined') || !msg.author.username || (typeof msg.author.username === 'undefined')) {
                 msg.channel.send("Unable to execute command as I am unable to gauge who sent the message.")
@@ -165,10 +161,23 @@ bot.on('ready', () => {
             const discriminator = (msg.author.discriminator && (typeof msg.author.discriminator !== 'undefined')) ? ('#' + msg.author.discriminator) : '';
             const user = msg.author.username + discriminator;
             if (!ADMINS.includes(user)) {
-                msg.channel.send("Only admins are able to execute commands on the minecraft server.");
+                msg.channel.send(`Only admins are able to execute commands starting with !${MC}.`);
                 return;
             }
-            // Execute the command on the minecraft server.
+            switch (content) {
+                case `!${MC} admins`:
+                    if (ADMINS.length < 1) {
+                        msg.channel.send('There are currently no admins for this bot.');
+                        return;
+                    }
+                    msg.channel.send(ADMINS.join(", "));
+                    return;
+            }
+            // Execute commands on the minecraft server.
+            if (statusType != 'PLAYING') {
+                msg.channel.send("Unable to execute command since the minecraft server is not running.")
+                return;
+            }
             const command = content.substr(4).trimStart();
             executeCommand(command, msg.channel);
         });
