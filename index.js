@@ -15,6 +15,7 @@ const bot = new Discord.Client();
 const TOKEN = process.env.TOKEN;
 const ADMINS = (process.env.ADMINS && (typeof process.env.ADMINS !== 'undefined')) ? process.env.ADMINS.split(" ") : [];
 const SCREEN_NAME = (process.env.SCREEN_NAME && (typeof process.env.SCREEN_NAME !== 'undefined')) ? process.env.SCREEN_NAME : "minecraft_server";
+const MC = (process.env.MC && (typeof process.env.MC !== 'undefined')) ? process.env.MC : "mc";
 
 function executeCommand(command, channel) {
     try {
@@ -127,12 +128,12 @@ bot.on('ready', () => {
             const content = msg.content.trim();
             // General commands.
             switch (content) {
-                case '-mc ip':
+                case `-${MC} ip`:
                     fetchIP((err, currentIP) => {
                         msg.channel.send(err ? ip : currentIP);
                     });
                     return;
-                case '-mc list':
+                case `-${MC} list`:
                     if (players.length <= 0) {
                         msg.channel.send('There are currently no players in the minecraft server.');
                         return;
@@ -145,7 +146,7 @@ bot.on('ready', () => {
                     return;
             }
             // Elevated commands.
-            if (content.length < 5 || !content.startsWith('!mc')) {
+            if (content.length < 5 || !content.startsWith(`!${MC}`)) {
                 return;
             }
             if (statusType != 'PLAYING') {
@@ -160,7 +161,7 @@ bot.on('ready', () => {
             const discriminator = (msg.author.discriminator && (typeof msg.author.discriminator !== 'undefined')) ? ('#' + msg.author.discriminator) : '';
             const user = msg.author.username + discriminator;
             if (!ADMINS.includes(user)) {
-                msg.channel.send("Only mc-bot admins are able to execute commands on the minecraft server.");
+                msg.channel.send("Only admins are able to execute commands on the minecraft server.");
                 return;
             }
             // Execute the command on the minecraft server.
