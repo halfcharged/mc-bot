@@ -17,6 +17,44 @@ const ADMINS = (process.env.ADMINS && (typeof process.env.ADMINS !== 'undefined'
 const SCREEN_NAME = (process.env.SCREEN_NAME && (typeof process.env.SCREEN_NAME !== 'undefined')) ? process.env.SCREEN_NAME : "minecraft_server";
 const MC = (process.env.MC && (typeof process.env.MC !== 'undefined')) ? process.env.MC : "mc";
 
+// Is the author of a message an admin?
+function isAdmin(author) {
+    if (!author || (typeof author == 'undefined') || !author.username || (typeof author.username === 'undefined')) {
+        return false;
+    }
+    const discriminator = (author.discriminator && (typeof author.discriminator !== 'undefined')) ? ('#' + author.discriminator) : '';
+    const user = author.username + discriminator;
+    if (!ADMINS.includes(user)) {
+        return false;
+    }
+    return true;
+}
+
+function usage(admin) {
+    const normalUsage = `-${MC} <command>`
+    const adminUsage = `       !${MC} <minecraft-server-command>`
+    const usage = admin ? (normalUsage + '\n' + adminUsage) : normalUsage
+    const commands = [
+      'ip                    Retrieves the ip used to connect to the minecraft server.',
+      'list                  List users currently in the minecraft server.',
+      'help                  Shows this help text.'
+    ];
+    const adminCommands = [
+      'admins                Lists discord users that have admin privileges.'
+    ];
+    const allCommands = (admin ? commands.concat(adminCommands) : commands).sort().join('\n  ');
+    return `
+\`\`\`
+OVERVIEW: A discord bot for monitoring a minecraft server.
+
+USAGE: ${usage}
+
+COMMANDS:
+  ${allCommands}
+\`\`\`
+    `;
+}
+
 function executeCommand(command, channel) {
     try {
         child_process.execSync(`screen -S ${SCREEN_NAME} -X log off`);
@@ -139,6 +177,9 @@ bot.on('ready', () => {
         mcping();
         bot.on('message', msg => {
             const content = msg.content.trim();
+            if (!content.startsWith(`-${MC}`) && !content.startsWith(`!${MC}`)) {
+                return;
+            }
             // General commands.
             switch (content) {
                 case `-${MC} ip`:
@@ -158,31 +199,32 @@ bot.on('ready', () => {
                     msg.channel.send(`There are currently ${players.length} players in the minecraft server:\n    ${players.map(p => `*${p}*`).join('\n    ')}`);
                     return;
             }
-            // Elevated commands.
-            if (content.length < 5 || !content.startsWith(`!${MC}`)) {
+            const admin = isAdmin(msg.author);
+            if (content == `-${MC} help`) {
+                msg.channel.send(usage(admin));
                 return;
             }
-            // Check to make sure that the author of the message has the correct permissions to execute commands on the minecraft server.
-            if (!msg.author || (typeof msg.author == 'undefined') || !msg.author.username || (typeof msg.author.username === 'undefined')) {
-                msg.channel.send("Unable to execute command as I am unable to gauge who sent the message.")
-                return;
-            }
-            const discriminator = (msg.author.discriminator && (typeof msg.author.discriminator !== 'undefined')) ? ('#' + msg.author.discriminator) : '';
-            const user = msg.author.username + discriminator;
-            if (!ADMINS.includes(user)) {
-                msg.channel.send(`Only admins are able to execute commands starting with !${MC}.`);
+            // Admin commands.
+            if (!admin || content.length < MC.length + 3) {
+                msg.channel.send('Invalid command');
+                msg.channel.send(usage(admin));
                 return;
             }
             switch (content) {
-                case `!${MC} admins`:
+                case `-${MC} admins`:
                     if (ADMINS.length < 1) {
-                        msg.channel.send('There are currently no admins for this bot.');
+                        msg.channel.send('There are currently no admins.');
                         return;
                     }
                     msg.channel.send(ADMINS.join(", "));
                     return;
             }
             // Execute commands on the minecraft server.
+            if (!content.startsWith(`!${MC}`)) {
+                msg.channel.send('Invalid command');
+                msg.channel.send(usage(admin));
+                return;
+            }
             if (statusType != 'PLAYING') {
                 msg.channel.send("Unable to execute command since the minecraft server is not running.")
                 return;
