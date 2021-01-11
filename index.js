@@ -23,10 +23,9 @@ function executeCommand(command, channel) {
         fs.rmSync(`/tmp/mc-${SCREEN_NAME}-command`, { force: true });
         child_process.execSync(`screen -S ${SCREEN_NAME} -X logfile /tmp/mc-${SCREEN_NAME}-command`);
         child_process.execSync(`screen -S ${SCREEN_NAME} -X log on`);
-        child_process.execSync(`screen -S ${SCREEN_NAME} -X ${command}`);
+        child_process.execSync(`screen -S ${SCREEN_NAME} -X stuff "${command}\r"`);
         sleep.sleep(1);
         child_process.execSync(`screen -S ${SCREEN_NAME} -X log off`);
-        console.log(`Executed ${command}`);
     } catch(err) {
         channel.send(`Unable to execute command: ${err.message}`);
     }
