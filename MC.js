@@ -28,6 +28,12 @@ module.exports = class MC {
     startMonitoring() {
         this.bot.login(this.TOKEN);
         this.server = new mcping.MinecraftServer('localhost', 25565);
+        this.bot.on('error', (error) => {
+            this.logError(error.message);
+            this.logError('Shutting Down');
+            this.bot.destroy();
+            process.exit(1);
+        });
         this.bot.on('ready', () => {
             this.log(`Logged in as ${this.bot.user.tag}!`);
             const initialIP = 'Failed To Fetch IP';
