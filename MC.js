@@ -9,9 +9,9 @@
 const getIP = require('external-ip')();
 const child_process = require("child_process");
 const fs = require('fs');
-const sleep = require('sleep');
 const chalk = require('chalk');
 const mcping = require('mcping-js');
+const sleep = require('system-sleep');
 
 const ServerStatus = require('./ServerStatus');
 
@@ -184,7 +184,7 @@ COMMANDS:
             channel.send(`Unable to execute command: ${err.message}`);
             return;
         }
-        sleep.sleep(3);
+        sleep(3000);
         let output = "";
         try {
             output = fs.readFileSync(`/tmp/mc-${this.SCREEN_NAME}-command`, 'utf8');
