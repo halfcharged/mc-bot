@@ -10,32 +10,58 @@ const getIP = require('external-ip')();
 const child_process = require("child_process");
 const fs = require('fs');
 const chalk = require('chalk');
-const mcping = require('mcping-js');
+const MCPing = require('mcping-js');
 const sleep = require('system-sleep');
+const Discord = require('discord.js');
 
 const ServerStatus = require('./ServerStatus');
 
 module.exports = class MC {
 
-    constructor(bot, TOKEN, ADMINS, SCREEN_NAME, MC) {
-        this.bot = bot;
+    constructor(TOKEN, ADMINS, SCREEN_NAME, MC) {
         this.TOKEN = TOKEN;
         this.ADMINS = ADMINS;
         this.SCREEN_NAME = SCREEN_NAME;
         this.MC = MC;
     }
 
-    startMonitoring() {
-        this.bot.login(this.TOKEN);
-        this.server = new mcping.MinecraftServer('localhost', 25565);
-        this.bot.on('error', (error) => {
+    reconnect(callback, timeout) {
+        const time = timeout === undefined ? 1000 : timeout;
+        const newTime = Math.min(time * 2, 300000);
+        this.log(`Waiting ${time}ms...`);
+        setTimeout(this.connect.bind(this), time, callback, newTime);
+    }
+
+    connect(callback, timeout) {
+        const time = timeout === undefined ? 1000 : timeout;
+        this.log("Connecting...");
+        let data = { "bot": new Discord.Client(), "quit": false, "connected": false };
+        data.bot.on('error', (error) => {
+            if (!data.connected || data.quit) {
+                return;
+            }
+            data.quit = true;
+            data.bot.destroy();
             this.logError(error.message);
-            this.logError('Shutting Down');
-            this.bot.destroy();
-            process.exit(1);
+            this.reconnect(callback, data.connected ? 1000 : time);
         });
-        this.bot.on('ready', () => {
-            this.log(`Logged in as ${this.bot.user.tag}!`);
+        data.bot.on('ready', () => {
+            this.log(`Logged in as ${data.bot.user.tag}!`);
+            callback(data);
+        });
+        data.bot.login(this.TOKEN).then((token) => {
+            data.connected = true;
+            this.log("Successfully Connected.");
+        }).catch((error) => {
+            data.bot.destroy();
+            this.logError(error.message);
+            this.reconnect(callback, time);
+        });
+    }
+
+    startMonitoring() {
+        this.connect((data) => {
+            this.server = new MCPing.MinecraftServer('localhost', 25565);
             const initialIP = 'Failed To Fetch IP';
             this.serverStatus = new ServerStatus(this.MC, initialIP, '', '', '', null, []);
             const fetchIP = (callback) => {
@@ -50,6 +76,9 @@ module.exports = class MC {
             };
             const ipPing = (callback) => {
                 fetchIP((ipErr, currentIP) => {
+                    if (data.quit) {
+                        return;
+                    }
                     let timeout = 3600000;
                     if (ipErr) {
                         this.logError(ipErr);
@@ -65,14 +94,17 @@ module.exports = class MC {
             };
             const mcping = () => {
                 this.server.ping(10000, 1073741831, (err, res) => {
+                    if (data.quit) {
+                        return;
+                    }
                     if (this.serverStatus.ping(err, res)) {
-                        this.bot.user.setStatus(this.serverStatus.userStatus).catch(this.logError);
-                        this.bot.user.setActivity(this.serverStatus.serverStatus, { type: this.serverStatus.statusType })
+                        data.bot.user.setStatus(this.serverStatus.userStatus).catch(this.logError);
+                        data.bot.user.setActivity(this.serverStatus.serverStatus, { type: this.serverStatus.statusType })
                             .then(presence => this.log('Status: ' + this.serverStatus.serverStatus)).catch(this.logError);
                     }
                     const lastFavicon = this.serverStatus.favicon;
                     if (this.serverStatus.favicon && this.serverStatus.favicon != lastFavicon) {
-                        this.bot.user.setAvatar(this.serverStatus.favicon);
+                        data.bot.user.setAvatar(this.serverStatus.favicon);
                     }
                     setTimeout(mcping, 10000);
                 });
@@ -136,7 +168,7 @@ module.exports = class MC {
             };
             ipPing((err, ip) => {
                 mcping();
-                this.bot.on('message', message);
+                data.bot.on('message', message);
             });
         });
     }
